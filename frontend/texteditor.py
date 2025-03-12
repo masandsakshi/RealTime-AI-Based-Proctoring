@@ -139,17 +139,30 @@ class TextEditorApp:
         else:
             self.next_button.config(text="Next")
 
+    def log_question_change(self, question_label):
+        """Log a special entry to denote that the question page has changed."""
+        timestamp = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        log_entry = {
+            "timestamp": timestamp,
+            "key_value": question_label,
+            "key_event": "question_change"
+        }
+        print(f"Question changed to: {question_label} at {timestamp}")
+        self.log_entries.append(log_entry)
+
     def show_previous(self):
         if self.current_question > 0:
             self.current_question -= 1
             self.show_question_page(self.current_question)
             self.update_nav_buttons()
+            self.log_question_change(self.questions[self.current_question])
 
     def show_next(self):
         if self.current_question < len(self.questions) - 1:
             self.current_question += 1
             self.show_question_page(self.current_question)
             self.update_nav_buttons()
+            self.log_question_change(self.questions[self.current_question])
         else:
             # Finish exam: disable all answer widgets and navigation buttons
             for widget in self.answer_widgets:
