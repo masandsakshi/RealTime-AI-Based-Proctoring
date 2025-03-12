@@ -5,7 +5,8 @@ import tkinter.font as tkFont
 import datetime
 import csv
 import os
-import time  # <-- For Unix timestamp
+import time  # For time functions
+from focus import FocusMonitor  # Import our focus monitor module
 
 
 class TextEditorApp:
@@ -19,13 +20,11 @@ class TextEditorApp:
         self.time_remaining = self.exam_duration
         self.exam_started = False
 
-        # Use a themed style for a better design
         style = ttk.Style()
         style.theme_use("clam")
 
-        # Initialize the log buffer for keystrokes
+        # Initialize the log buffer for keystrokes and events
         self.log_entries = []
-        # CSV file name for logging
         self.csv_filename = "keystrokes.csv"
 
         # --- Header Frame ---
@@ -33,13 +32,11 @@ class TextEditorApp:
         header_frame.grid(row=0, column=0, sticky="ew")
         header_frame.columnconfigure(0, weight=1)
 
-        # Title label
         title_label = ttk.Label(
             header_frame, text="Online Exam Text Editor", font=("Helvetica", 18, "bold")
         )
         title_label.grid(row=0, column=0, sticky="w")
 
-        # Clock label for a live timer
         self.timer_label = ttk.Label(header_frame, font=("Helvetica", 12))
         self.timer_label.grid(row=0, column=1, sticky="e")
         self.update_clock()
@@ -61,7 +58,6 @@ class TextEditorApp:
         root.grid_rowconfigure(1, weight=1)
         root.grid_columnconfigure(0, weight=1)
 
-        # Set a custom font for the text widgets
         custom_font = tkFont.Font(family="Helvetica", size=12)
 
         # Define the questions list
@@ -70,23 +66,19 @@ class TextEditorApp:
             "Question 2: What is your age?",
         ]
 
-        # Lists to hold the question frames and their answer widgets
         self.question_frames = []
         self.answer_widgets = []
 
-        # Container frame for question pages
         self.page_container = ttk.Frame(main_frame)
         self.page_container.pack(fill="both", expand=True)
 
         # Create a separate frame for each question (each page)
         for question in self.questions:
             frame = ttk.Frame(self.page_container, padding="10")
-            # Add the question as a label at the top of the frame
             question_label = ttk.Label(
                 frame, text=question, font=("Helvetica", 14, "bold")
             )
             question_label.pack(anchor="w", pady=(0, 5))
-            # Create an answer widget with a reduced height
             answer_widget = scrolledtext.ScrolledText(
                 frame,
                 wrap=tk.WORD,
@@ -96,15 +88,12 @@ class TextEditorApp:
                 height=5,  # Adjust height as needed
             )
             answer_widget.pack(fill="both", expand=True)
-
             # Bind Key Down and Key Up events
             answer_widget.bind("<KeyPress>", self.on_key_down)
             answer_widget.bind("<KeyRelease>", self.on_key_up)
-
             self.answer_widgets.append(answer_widget)
             self.question_frames.append(frame)
 
-        # Start by showing the first question page
         self.current_question = 0
         self.show_question_page(self.current_question)
 
@@ -130,34 +119,33 @@ class TextEditorApp:
         # Schedule the log flush every 5 seconds
         self.root.after(5000, self.flush_log)
 
+    def append_log_entry(self, entry):
+        """Callback for external events (like focus events) to add a log entry."""
+        self.log_entries.append(entry)
+
     def show_question_page(self, index):
-        # Hide all question frames
         for frame in self.question_frames:
             frame.pack_forget()
-        # Show the frame for the current question
         self.question_frames[index].pack(fill="both", expand=True)
 
     def update_nav_buttons(self):
-        # Disable Previous if on the first question
         if self.current_question == 0:
             self.prev_button.config(state="disabled")
         else:
             self.prev_button.config(state="normal")
-        # Change Next button text to "Finish" if on the last question
         if self.current_question == len(self.questions) - 1:
             self.next_button.config(text="Finish")
         else:
             self.next_button.config(text="Next")
 
     def log_question_change(self, question_label):
-        """Log a special entry to denote that the question page has changed."""
-        timestamp = int(time.time() * 1000)  # Unix timestamp in seconds
+        timestamp = datetime.datetime.now().timestamp()
         log_entry = {
-            "Event": "question_change",
-            "Key": question_label,
-            "Timestamp": timestamp,
+            "timestamp": f"{timestamp:.3f}",
+            "key_value": question_label,
+            "key_event": "question_change",
         }
-        print(f"Question changed to: {question_label} at {timestamp}")
+        print(f"Question changed to: {question_label} at {timestamp:.3f}")
         self.log_entries.append(log_entry)
 
     def show_previous(self):
@@ -174,7 +162,6 @@ class TextEditorApp:
             self.update_nav_buttons()
             self.log_question_change(self.questions[self.current_question])
         else:
-            # Finish exam: disable all answer widgets and navigation buttons
             for widget in self.answer_widgets:
                 widget.config(state="disabled")
             self.prev_button.config(state="disabled")
@@ -184,7 +171,6 @@ class TextEditorApp:
     def update_clock(self):
         if not self.exam_started:
             self.exam_started = True
-
         if self.time_remaining > 0:
             hours = self.time_remaining // 3600
             minutes = (self.time_remaining % 3600) // 60
@@ -197,32 +183,30 @@ class TextEditorApp:
             self.root.after(1000, self.update_clock)
         else:
             self.timer_label.config(text="Time's Up!")
-            # Disable all answer widgets when time's up
             for widget in self.answer_widgets:
                 widget.config(state="disabled")
 
     def on_key_down(self, event):
-        """Handle Key Down events."""
-        timestamp = int(time.time() * 1000)  # Unix timestamp in seconds
-        # If event.char is empty (e.g. Shift, Ctrl), use event.keysym
+        timestamp = datetime.datetime.now().timestamp()
         key_value = event.char if event.char else event.keysym
-
         log_entry = {
-            "Event": "KD",  # Key Down
-            "Key": key_value,
-            "Timestamp": timestamp,
+            "timestamp": f"{timestamp:.3f}",
+            "key_value": key_value,
+            "key_event": "KD",
         }
-        print(f"KD: {key_value} at {timestamp}")
+        print(f"KD: {key_value} at {timestamp:.3f}")
         self.status.set(f"KD: {key_value}")
         self.log_entries.append(log_entry)
 
     def on_key_up(self, event):
-        """Handle Key Up events."""
-        timestamp = int(time.time() * 1000)  # Unix timestamp in seconds
+        timestamp = datetime.datetime.now().timestamp()
         key_value = event.char if event.char else event.keysym
-
-        log_entry = {"Event": "KU", "Key": key_value, "Timestamp": timestamp}  # Key Up
-        print(f"KU: {key_value} at {timestamp}")
+        log_entry = {
+            "timestamp": f"{timestamp:.3f}",
+            "key_value": key_value,
+            "key_event": "KU",
+        }
+        print(f"KU: {key_value} at {timestamp:.3f}")
         self.status.set(f"KU: {key_value}")
         self.log_entries.append(log_entry)
 
@@ -232,7 +216,7 @@ class TextEditorApp:
             with open(
                 self.csv_filename, mode="a", newline="", encoding="utf-8"
             ) as csvfile:
-                fieldnames = ["Event", "Key", "Timestamp"]
+                fieldnames = ["timestamp", "key_value", "key_event"]
                 writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
                 if not file_exists:
                     writer.writeheader()
@@ -242,14 +226,11 @@ class TextEditorApp:
         self.root.after(5000, self.flush_log)
 
     def new_file(self):
-        # Clear all answer text widgets
         for widget in self.answer_widgets:
             widget.delete("1.0", tk.END)
         self.status.set("New file created")
 
     def open_file(self):
-        # For a multi-question editor, open_file functionality isn't straightforward.
-        # Here, we'll display a status message indicating it's not supported.
         file_path = filedialog.askopenfilename(
             filetypes=[("Text Files", "*.txt"), ("All Files", "*.*")]
         )
@@ -257,7 +238,6 @@ class TextEditorApp:
             self.status.set("Open file not supported in multi-question editor")
 
     def save_file(self):
-        # Combine answers from all question pages into one text block
         combined_text = ""
         for i, widget in enumerate(self.answer_widgets):
             answer_text = widget.get("1.0", tk.END)
@@ -275,6 +255,8 @@ class TextEditorApp:
 def main():
     root = tk.Tk()
     app = TextEditorApp(root)
+    # Initialize FocusMonitor to log focus events via our append_log_entry() callback.
+    FocusMonitor(root, app.append_log_entry)
     root.mainloop()
 
 
