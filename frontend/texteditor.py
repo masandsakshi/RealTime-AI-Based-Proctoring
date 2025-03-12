@@ -68,26 +68,46 @@ class TextEditorApp:
             "Question 2: What is Gender?"
         ]
 
-        # List to hold answer text widgets for each question
+        # Lists to hold the question frames and their answer widgets
+        self.question_frames = []
         self.answer_widgets = []
 
-        # Create a separate LabelFrame for each question with reduced size
-        for question in self.questions:
-            q_frame = ttk.LabelFrame(main_frame, text=question, padding="5")
-            # Fill horizontally only, not vertically, to reduce size
-            q_frame.pack(fill="x", padx=5, pady=5)
+        # Container frame for question pages
+        self.page_container = ttk.Frame(main_frame)
+        self.page_container.pack(fill="both", expand=True)
 
+        # Create a separate frame for each question (each page)
+        for question in self.questions:
+            frame = ttk.Frame(self.page_container, padding="10")
+            # Add the question as a label at the top of the frame
+            question_label = ttk.Label(frame, text=question, font=("Helvetica", 14, "bold"))
+            question_label.pack(anchor="w", pady=(0, 5))
+            # Create an answer widget with a reduced height
             answer_widget = scrolledtext.ScrolledText(
-                q_frame,
+                frame,
                 wrap=tk.WORD,
                 font=custom_font,
                 bg="#ffffff",
                 fg="#333",
-                height=5  # Reduced height (number of text lines visible)
+                height=5  # Adjust height (number of visible text lines)
             )
-            answer_widget.pack(fill="x", padx=5, pady=5)
+            answer_widget.pack(fill="both", expand=True)
             answer_widget.bind("<Key>", self.on_key_press)
             self.answer_widgets.append(answer_widget)
+            self.question_frames.append(frame)
+
+        # Start by showing the first question page
+        self.current_question = 0
+        self.show_question_page(self.current_question)
+
+        # --- Navigation Frame ---
+        nav_frame = ttk.Frame(main_frame, padding="10")
+        nav_frame.pack(fill="x")
+        self.prev_button = ttk.Button(nav_frame, text="Previous", command=self.show_previous)
+        self.prev_button.pack(side="left")
+        self.next_button = ttk.Button(nav_frame, text="Next", command=self.show_next)
+        self.next_button.pack(side="right")
+        self.update_nav_buttons()
 
         # --- Status Bar ---
         self.status = tk.StringVar()
@@ -99,6 +119,44 @@ class TextEditorApp:
 
         # Schedule the log flush every 10 seconds
         self.root.after(10000, self.flush_log)
+
+    def show_question_page(self, index):
+        # Hide all question frames
+        for frame in self.question_frames:
+            frame.pack_forget()
+        # Show the frame for the current question
+        self.question_frames[index].pack(fill="both", expand=True)
+
+    def update_nav_buttons(self):
+        # Disable Previous if on the first question
+        if self.current_question == 0:
+            self.prev_button.config(state="disabled")
+        else:
+            self.prev_button.config(state="normal")
+        # Change Next button text to "Finish" if on the last question
+        if self.current_question == len(self.questions) - 1:
+            self.next_button.config(text="Finish")
+        else:
+            self.next_button.config(text="Next")
+
+    def show_previous(self):
+        if self.current_question > 0:
+            self.current_question -= 1
+            self.show_question_page(self.current_question)
+            self.update_nav_buttons()
+
+    def show_next(self):
+        if self.current_question < len(self.questions) - 1:
+            self.current_question += 1
+            self.show_question_page(self.current_question)
+            self.update_nav_buttons()
+        else:
+            # Finish exam: disable all answer widgets and navigation buttons
+            for widget in self.answer_widgets:
+                widget.config(state="disabled")
+            self.prev_button.config(state="disabled")
+            self.next_button.config(state="disabled")
+            self.status.set("Exam Finished")
 
     def update_clock(self):
         if not self.exam_started:
@@ -159,7 +217,7 @@ class TextEditorApp:
             self.status.set("Open file not supported in multi-question editor")
 
     def save_file(self):
-        # Combine answers from all question frames into one text block
+        # Combine answers from all question pages into one text block
         combined_text = ""
         for i, widget in enumerate(self.answer_widgets):
             answer_text = widget.get("1.0", tk.END)
