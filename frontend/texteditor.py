@@ -5,6 +5,8 @@ import tkinter.font as tkFont
 import datetime
 import csv
 import os
+import time  # <-- For Unix timestamp
+
 
 class TextEditorApp:
     def __init__(self, root):
@@ -64,8 +66,8 @@ class TextEditorApp:
 
         # Define the questions list
         self.questions = [
-            "Question 1: What is Sex?",
-            "Question 2: What is Gender?"
+            "Question 1: What is your name?",
+            "Question 2: What is your age?",
         ]
 
         # Lists to hold the question frames and their answer widgets
@@ -80,7 +82,9 @@ class TextEditorApp:
         for question in self.questions:
             frame = ttk.Frame(self.page_container, padding="10")
             # Add the question as a label at the top of the frame
-            question_label = ttk.Label(frame, text=question, font=("Helvetica", 14, "bold"))
+            question_label = ttk.Label(
+                frame, text=question, font=("Helvetica", 14, "bold")
+            )
             question_label.pack(anchor="w", pady=(0, 5))
             # Create an answer widget with a reduced height
             answer_widget = scrolledtext.ScrolledText(
@@ -89,10 +93,14 @@ class TextEditorApp:
                 font=custom_font,
                 bg="#ffffff",
                 fg="#333",
-                height=5  # Adjust height (number of visible text lines)
+                height=5,  # Adjust height as needed
             )
             answer_widget.pack(fill="both", expand=True)
-            answer_widget.bind("<Key>", self.on_key_press)
+
+            # Bind Key Down and Key Up events
+            answer_widget.bind("<KeyPress>", self.on_key_down)
+            answer_widget.bind("<KeyRelease>", self.on_key_up)
+
             self.answer_widgets.append(answer_widget)
             self.question_frames.append(frame)
 
@@ -103,7 +111,9 @@ class TextEditorApp:
         # --- Navigation Frame ---
         nav_frame = ttk.Frame(main_frame, padding="10")
         nav_frame.pack(fill="x")
-        self.prev_button = ttk.Button(nav_frame, text="Previous", command=self.show_previous)
+        self.prev_button = ttk.Button(
+            nav_frame, text="Previous", command=self.show_previous
+        )
         self.prev_button.pack(side="left")
         self.next_button = ttk.Button(nav_frame, text="Next", command=self.show_next)
         self.next_button.pack(side="right")
@@ -117,8 +127,8 @@ class TextEditorApp:
         )
         status_bar.grid(row=2, column=0, sticky="ew")
 
-        # Schedule the log flush every 10 seconds
-        self.root.after(10000, self.flush_log)
+        # Schedule the log flush every 5 seconds
+        self.root.after(5000, self.flush_log)
 
     def show_question_page(self, index):
         # Hide all question frames
@@ -141,11 +151,11 @@ class TextEditorApp:
 
     def log_question_change(self, question_label):
         """Log a special entry to denote that the question page has changed."""
-        timestamp = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        timestamp = int(time.time() * 1000)  # Unix timestamp in seconds
         log_entry = {
-            "timestamp": timestamp,
-            "key_value": question_label,
-            "key_event": "question_change"
+            "Event": "question_change",
+            "Key": question_label,
+            "Timestamp": timestamp,
         }
         print(f"Question changed to: {question_label} at {timestamp}")
         self.log_entries.append(log_entry)
@@ -179,7 +189,9 @@ class TextEditorApp:
             hours = self.time_remaining // 3600
             minutes = (self.time_remaining % 3600) // 60
             seconds = self.time_remaining % 60
-            time_str = f"Time Remaining: {hours:02d}:{minutes:02d}:{seconds:02d} / 03:00:00"
+            time_str = (
+                f"Time Remaining: {hours:02d}:{minutes:02d}:{seconds:02d} / 03:00:00"
+            )
             self.timer_label.config(text=time_str)
             self.time_remaining -= 1
             self.root.after(1000, self.update_clock)
@@ -189,30 +201,45 @@ class TextEditorApp:
             for widget in self.answer_widgets:
                 widget.config(state="disabled")
 
-    def on_key_press(self, event):
-        timestamp = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    def on_key_down(self, event):
+        """Handle Key Down events."""
+        timestamp = int(time.time() * 1000)  # Unix timestamp in seconds
+        # If event.char is empty (e.g. Shift, Ctrl), use event.keysym
+        key_value = event.char if event.char else event.keysym
+
         log_entry = {
-            "timestamp": timestamp,
-            "key_value": event.char,   # The character pressed (empty for non-character keys)
-            "key_event": event.keysym  # The key symbol (e.g., "Shift_L", "Return", etc.)
+            "Event": "KD",  # Key Down
+            "Key": key_value,
+            "Timestamp": timestamp,
         }
-        key_info = f"Key pressed: '{event.char}' (keysym: {event.keysym}) at {timestamp}"
-        print(key_info)
-        self.status.set(key_info)
+        print(f"KD: {key_value} at {timestamp}")
+        self.status.set(f"KD: {key_value}")
+        self.log_entries.append(log_entry)
+
+    def on_key_up(self, event):
+        """Handle Key Up events."""
+        timestamp = int(time.time() * 1000)  # Unix timestamp in seconds
+        key_value = event.char if event.char else event.keysym
+
+        log_entry = {"Event": "KU", "Key": key_value, "Timestamp": timestamp}  # Key Up
+        print(f"KU: {key_value} at {timestamp}")
+        self.status.set(f"KU: {key_value}")
         self.log_entries.append(log_entry)
 
     def flush_log(self):
         if self.log_entries:
             file_exists = os.path.exists(self.csv_filename)
-            with open(self.csv_filename, mode="a", newline="", encoding="utf-8") as csvfile:
-                fieldnames = ["key_value", "key_event", "timestamp"]
+            with open(
+                self.csv_filename, mode="a", newline="", encoding="utf-8"
+            ) as csvfile:
+                fieldnames = ["Event", "Key", "Timestamp"]
                 writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
                 if not file_exists:
                     writer.writeheader()
                 for entry in self.log_entries:
                     writer.writerow(entry)
             self.log_entries = []
-        self.root.after(10000, self.flush_log)
+        self.root.after(5000, self.flush_log)
 
     def new_file(self):
         # Clear all answer text widgets
@@ -237,17 +264,19 @@ class TextEditorApp:
             combined_text += f"{self.questions[i]}\n{answer_text}\n\n"
         file_path = filedialog.asksaveasfilename(
             defaultextension=".txt",
-            filetypes=[("Text Files", "*.txt"), ("All Files", "*.*")]
+            filetypes=[("Text Files", "*.txt"), ("All Files", "*.*")],
         )
         if file_path:
             with open(file_path, "w", encoding="utf-8") as file:
                 file.write(combined_text)
             self.status.set(f"Saved: {file_path}")
 
+
 def main():
     root = tk.Tk()
     app = TextEditorApp(root)
     root.mainloop()
+
 
 if __name__ == "__main__":
     main()
