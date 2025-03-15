@@ -5,7 +5,7 @@ import tkinter.font as tkFont
 import datetime
 import csv
 import os
-from focus import FocusMonitor  # Import our focus monitor module
+from focus import FocusMonitor  
 import requests as req
 import json
 from audio.audio_analyser import start_audio_monitoring
