@@ -237,19 +237,19 @@ class TextEditorApp:
                 if entry["key_event"] == "focus_duration":
                     batch_payload.append({
                         "Type": "focus",
-                        "Value": [f"{entry['duration']:.3f}"]  
+                        "Value": [f"{entry['duration']:.3f}"]  # Correct focus loss duration payload
                     })
                 elif entry["key_event"] == "suspicious_activity":
                     batch_payload.append({
                         "Type": "focus",
-                        "Value": ["false", entry["timestamp"]]  
+                        "Value": ["false", entry["timestamp"]]  # Focus lost payload
                     })
                 elif entry["key_event"] == "focus_restore":
                     batch_payload.append({
                         "Type": "focus",
-                        "Value": ["true", entry["timestamp"]] 
+                        "Value": ["true", entry["timestamp"]]  # Focus regained payload
                     })
-                else:
+                else:  # Handles key_press events
                     batch_payload.append({
                         "Type": "key_press",
                         "Value": [
@@ -260,11 +260,22 @@ class TextEditorApp:
                     })
 
             if batch_payload:
-                json_payload = json.dumps(batch_payload, indent=4)
+                json_payload = json.dumps(batch_payload)
                 print("Sending batch payload to backend:")
                 print(json_payload)
 
-            self.log_entries = []  
+                # Uncomment when backend is ready
+                try:
+                    response = req.post(
+                        "http://localhost:8080/publish",
+                        data=json_payload,
+                        headers={"Content-Type": "application/json"},
+                    )
+                    print(f"Batch sent, status code: {response.status_code}")
+                except Exception as e:
+                    print(f"Error sending batch: {e}")
+
+            self.log_entries = []  # Clear log entries after sending batch
 
         if self.root.winfo_exists():
             self.root.after(5000, self.flush_log)
