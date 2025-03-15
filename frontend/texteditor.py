@@ -5,9 +5,10 @@ import tkinter.font as tkFont
 import datetime
 import csv
 import os
-from focus import FocusMonitor  # Import our focus monitor module
+from focus import FocusMonitor  
 import requests as req
 import json
+from audio.audio_analysis import start_audio_monitoring
 
 
 class TextEditorApp:
@@ -119,6 +120,8 @@ class TextEditorApp:
 
         # Schedule the log flush every 5 seconds
         self.root.after(5000, self.flush_log)
+        start_audio_monitoring(url="http://localhost:8080/publish")
+
 
     def append_log_entry(self, entry):
         """Callback for external events (like focus events) to add a log entry."""
