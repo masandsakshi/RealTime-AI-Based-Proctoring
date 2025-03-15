@@ -1,5 +1,8 @@
 # focus.py
 import datetime
+import json
+
+from aiohttp import Payload
 
 
 class FocusMonitor:
@@ -14,11 +17,11 @@ class FocusMonitor:
         self.log_callback = log_callback
         self.widget.bind("<FocusOut>", self.on_focus_out)
         self.widget.bind("<FocusIn>", self.on_focus_in)
-        self.suspicious_count = 0  # Track number of focus losses
+        self.suspicious_count = 0
         self.last_event_time = 0
-        self.EVENT_THRESHOLD = 0.5  # Increased threshold to 500ms
-        self.internal_widgets = set()  # Track internal widgets
-        self.focus_was_lost = False  # Track if focus was actually lost
+        self.EVENT_THRESHOLD = 0.5
+        self.internal_widgets = set()
+        self.focus_was_lost = False
 
     def register_internal_widget(self, widget):
         """Register widgets that are part of the exam interface"""
@@ -58,6 +61,11 @@ class FocusMonitor:
             }
             print(f"\nWARNING: Suspicious Activity #{self.suspicious_count} detected!")
             print(f"Student switched away from exam window at {timestamp:.3f}")
+            payload = {
+                "Type": "focus",
+                "Value": ["false", f"{timestamp:.3f}"],
+            }
+            print(json.dumps(payload))
             self.log_callback(entry)
 
     def on_focus_in(self, event):
@@ -71,4 +79,10 @@ class FocusMonitor:
             }
             print(f"Student returned to exam window at {timestamp:.3f}")
             self.log_callback(entry)
+            payload = {
+                "Type": "focus",
+                "Value": ["true", f"{timestamp:.3f}"],
+            }
+            print(json.dumps(payload))
+
             self.focus_was_lost = False  # Reset the flag
