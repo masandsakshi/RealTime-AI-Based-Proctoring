@@ -1,86 +1,119 @@
-# audio_analyzer.py
 import time
 import numpy as np
 import sounddevice as sd
 import webrtcvad
-import requests as req
+import requests
 import json
 import threading
+from queue import Queue
 
 
-def start_audio_monitoring(
-    url="http://localhost:8080/publish",
-    amplitude_threshold=0.1,
-    suspicious_duration_threshold=5,
-):
+def start_audio_monitoring(url="http://localhost:8080/publish"):
+    # Create event queue for thread-safe communication
+    event_queue = Queue()
 
     def audio_monitoring_loop():
-        FS = 16000  # Sampling rate (Hz); optimal for webrtcvad
-        CHUNK_DURATION = 1.0  # Duration (in seconds) per audio chunk
-        CHUNK_SAMPLES = int(FS * CHUNK_DURATION)
-        vad = webrtcvad.Vad(1)  # Aggressiveness mode: 0 (least) to 3 (most)
-        suspicious_duration = 0
+        # Audio configuration
+        FS = 16000  # Sampling rate must be 16000, 32000, or 48000 for WebRTC VAD
+        CHANNELS = 1
+        CHUNK_DURATION = 0.03  # 30ms chunks for WebRTC VAD
+        CHUNK_SIZE = int(FS * CHUNK_DURATION)
 
+        # Initialize VAD
+        vad = webrtcvad.Vad(3)  # Aggressiveness level 3 (most aggressive)
+
+        try:
+            # Configure audio stream
+            stream = sd.InputStream(
+                samplerate=FS,
+                channels=CHANNELS,
+                dtype=np.int16,
+                blocksize=CHUNK_SIZE,
+                latency="low",
+            )
+
+            with stream:
+                print("Audio monitoring started")
+                while True:
+                    try:
+                        # Read audio chunk
+                        audio_chunk, overflowed = stream.read(CHUNK_SIZE)
+                        if overflowed:
+                            print("Audio buffer overflow")
+                            continue
+
+                        # Convert to the format needed by WebRTC VAD
+                        audio_chunk = audio_chunk.reshape(-1)  # Flatten array
+                        audio_bytes = audio_chunk.tobytes()
+
+                        # Check for speech
+                        try:
+                            is_speech = vad.is_speech(audio_bytes, FS)
+                            if is_speech:
+                                timestamp = time.time()
+                                event_queue.put(
+                                    {
+                                        "Type": "sus_aud",
+                                        "Value": [
+                                            "Speech detected",
+                                            f"{timestamp:.3f}",
+                                        ],
+                                    }
+                                )
+                        except Exception as e:
+                            print(f"VAD error: {e}")
+                            continue
+
+                        # Check amplitude
+                        amplitude = np.abs(audio_chunk).mean()
+                        if amplitude > 1000:  # Adjust threshold as needed
+                            timestamp = time.time()
+                            event_queue.put(
+                                {
+                                    "Type": "sus_aud",
+                                    "Value": [
+                                        "Loud noise detected",
+                                        f"{timestamp:.3f}",
+                                    ],
+                                }
+                            )
+
+                        time.sleep(0.01)  # Small delay to prevent CPU overuse
+
+                    except Exception as e:
+                        print(f"Error processing audio chunk: {e}")
+                        time.sleep(0.1)  # Add delay on error
+
+        except Exception as e:
+            print(f"Error initializing audio stream: {e}")
+            return
+
+    def event_sender():
         while True:
             try:
-                # Capture one chunk of audio (16-bit PCM)
-                chunk = sd.rec(CHUNK_SAMPLES, samplerate=FS, channels=1, dtype="int16")
-                sd.wait()
-
-                # Convert chunk to float for amplitude analysis (range: -1 to 1)
-                float_chunk = chunk.flatten().astype(np.float32) / 32768.0
-
-                # Increase the suspicious counter if above threshold; otherwise, decay it
-                if np.max(np.abs(float_chunk)) > amplitude_threshold:
-                    suspicious_duration += CHUNK_DURATION
-                else:
-                    suspicious_duration = max(suspicious_duration - CHUNK_DURATION, 0)
-
-                # Check for speech using webrtcvad (expects raw PCM bytes)
-                is_speech = vad.is_speech(chunk.tobytes(), sample_rate=FS)
-                if is_speech:
-                    print("Speech detected in audio chunk.")
-                    payload = {
-                        "Type": "sus_aud",
-                        "Value": ["Suspicious activity (conversation)"],
-                    }
+                # Get event from queue
+                if not event_queue.empty():
+                    event = event_queue.get()
                     try:
-                        response = req.post(
+                        response = requests.post(
                             url,
-                            data=json.dumps(payload),
+                            json={"data": [event]},
                             headers={"Content-Type": "application/json"},
+                            timeout=1,
                         )
-                        print("Audio payload sent (speech), response:", response.text)
-                    except Exception as e:
-                        print("Error sending audio payload (speech):", e)
-                    # Reset suspicious duration after sending payload
-                    suspicious_duration = 0
+                        if response.status_code != 200:
+                            print(f"Error sending event: {response.status_code}")
+                    except requests.exceptions.RequestException as e:
+                        print(f"Network error: {e}")
+                time.sleep(0.1)  # Prevent tight loop
+            except Exception as e:
+                print(f"Event sender error: {e}")
+                time.sleep(0.1)
 
-                # Check if loud noise persisted over threshold duration
-                if suspicious_duration >= suspicious_duration_threshold:
-                    print("Loud noise detected over threshold duration.")
-                    payload = {
-                        "Type": "sus_aud",
-                        "Value": ["Suspicious activity (loud noise)"],
-                    }
-                    try:
-                        response = req.post(
-                            url,
-                            data=json.dumps(payload),
-                            headers={"Content-Type": "application/json"},
-                        )
-                        print(
-                            "Audio payload sent (loud noise), response:", response.text
-                        )
-                    except Exception as e:
-                        print("Error sending audio payload (loud noise):", e)
-                    suspicious_duration = 0
-
-            except Exception as ex:
-                print("Error in audio monitoring:", ex)
-            # Small pause between iterations; adjust if needed
-            time.sleep(0.1)
-
-    # Launch the monitoring loop in a separate daemon thread.
+    # Start monitoring thread
     audio_thread = threading.Thread(target=audio_monitoring_loop, daemon=True)
     audio_thread.start()
+
+    # Start event sender thread
+    sender_thread = threading.Thread(target=event_sender, daemon=True)
+    sender_thread.start()
