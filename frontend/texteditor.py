@@ -249,15 +249,15 @@ class TextEditorApp:
                 print("Sending batch payload to backend:")
                 print(json_payload)  # This will show the exact format being sent
 
-                # try:
-                #     response = req.post(
-                #         'http://localhost:8080/publish',
-                #         data=json_payload,
-                #         headers={'Content-Type': 'application/json'}
-                #     )
-                #     print(f"Batch sent, status code: {response.status_code}")
-                # except Exception as e:
-                #     print(f"Error sending batch: {e}")   
+                try:
+                    response = req.post(
+                        'http://localhost:8080/publish',
+                        data=json_payload,
+                        headers={'Content-Type': 'application/json'}
+                    )
+                    print(f"Batch sent, status code: {response.status_code}")
+                except Exception as e:
+                    print(f"Error sending batch: {e}")   
 
             self.log_entries = []
         self.root.after(5000, self.flush_log)
