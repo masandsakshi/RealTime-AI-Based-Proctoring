@@ -8,9 +8,15 @@ app = Flask(__name__)
 
 
 
-@app.route('/dock', methods=['POST'])
+@app.route('/key_press', methods=['POST'])
 def records():
-    data_point = request.json.get("event")
+    data_point = request.get_json()
+    print(data_point)
+
+    # data_point holds an individual key_press event and it's details
+    # Use however u like :)
+
+    return 'ok', 200
 
 
 if __name__ == '__main__':

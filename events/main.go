@@ -10,7 +10,7 @@ import (
 
 type Event struct {
 	Type string
-	Value string 
+	Value []string 
 }
 
 type Config struct {

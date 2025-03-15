@@ -7,7 +7,8 @@ import csv
 import os
 import time  # For time functions
 from focus import FocusMonitor  # Import our focus monitor module
-
+import requests as req
+import json
 
 class TextEditorApp:
     def __init__(self, root):
@@ -195,6 +196,10 @@ class TextEditorApp:
             "key_event": "KD",
         }
         print(f"KD: {key_value} at {timestamp:.3f}")
+        payload = {"Type":"key_press", "Value": [key_value, str(timestamp)]}
+        print(json.dumps(payload))
+        _x = req.post('http://localhost:8080/publish',data= json.dumps(payload), headers={'Content-Type': 'application/json'})
+        print(_x.status_code)
         self.status.set(f"KD: {key_value}")
         self.log_entries.append(log_entry)
 
