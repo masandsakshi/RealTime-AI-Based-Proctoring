@@ -12,6 +12,9 @@ import requests as req
 import json
 
 sys.path.append(str(Path(__file__).parent.parent))
+from video.webcam import start_video_monitoring
+
+sys.path.append(str(Path(__file__).parent.parent))
 from audio.audio_analysis import start_audio_monitoring
 
 class TextEditorApp:
@@ -123,6 +126,8 @@ class TextEditorApp:
         # Schedule the log flush every 5 seconds
         self.root.after(5000, self.flush_log)
         start_audio_monitoring(url="http://localhost:8080/publish")
+        start_video_monitoring(url="http://localhost:8080/publish")
+
 
     def append_log_entry(self, entry):
         """Callback for external events (like focus events) to add a log entry."""
