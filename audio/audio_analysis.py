@@ -1,9 +1,7 @@
 import time
 import numpy as np
 import sounddevice as sd
-import webrtcvad
 import requests
-import json
 import threading
 from queue import Queue
 
