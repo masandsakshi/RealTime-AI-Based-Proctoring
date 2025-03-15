@@ -151,6 +151,7 @@ class TextEditorApp:
 
     def show_previous(self):
         if self.current_question > 0:
+            self.flush_log()
             self.current_question -= 1
             self.show_question_page(self.current_question)
             self.update_nav_buttons()
@@ -158,11 +159,13 @@ class TextEditorApp:
 
     def show_next(self):
         if self.current_question < len(self.questions) - 1:
+            self.flush_log()
             self.current_question += 1
             self.show_question_page(self.current_question)
             self.update_nav_buttons()
             self.log_question_change(self.questions[self.current_question])
         else:
+            self.flush_log()
             for widget in self.answer_widgets:
                 widget.config(state="disabled")
             self.prev_button.config(state="disabled")
@@ -257,10 +260,11 @@ class TextEditorApp:
                 #     )
                 #     print(f"Batch sent, status code: {response.status_code}")
                 # except Exception as e:
-                #     print(f"Error sending batch: {e}")   
+                #     print(f"Error sending batch: {e}")
 
             self.log_entries = []
-        self.root.after(5000, self.flush_log)
+        if self.root.winfo_exists():
+            self.root.after(5000, self.flush_log)
 
     def new_file(self):
         for widget in self.answer_widgets:
