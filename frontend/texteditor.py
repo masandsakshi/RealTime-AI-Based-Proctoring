@@ -237,19 +237,19 @@ class TextEditorApp:
                 if entry["key_event"] == "focus_duration":
                     batch_payload.append({
                         "Type": "focus",
-                        "Value": [f"{entry['duration']:.3f}"]  # Correct focus loss duration payload
+                        "Value": [f"{entry['duration']:.3f}"]  
                     })
                 elif entry["key_event"] == "suspicious_activity":
                     batch_payload.append({
                         "Type": "focus",
-                        "Value": ["false", entry["timestamp"]]  # Focus lost payload
+                        "Value": ["false", entry["timestamp"]]  
                     })
                 elif entry["key_event"] == "focus_restore":
                     batch_payload.append({
                         "Type": "focus",
-                        "Value": ["true", entry["timestamp"]]  # Focus regained payload
+                        "Value": ["true", entry["timestamp"]] 
                     })
-                else:  # Handles key_press events
+                else:
                     batch_payload.append({
                         "Type": "key_press",
                         "Value": [
