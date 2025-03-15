@@ -5,10 +5,14 @@ import tkinter.font as tkFont
 import datetime
 import csv
 import os
-from focus import FocusMonitor  
+import sys
+from pathlib import Path
+from focus import FocusMonitor
 import requests as req
 import json
 
+sys.path.append(str(Path(__file__).parent.parent))
+from audio.audio_analysis import start_audio_monitoring
 
 class TextEditorApp:
     def __init__(self, root):
@@ -119,7 +123,6 @@ class TextEditorApp:
         # Schedule the log flush every 5 seconds
         self.root.after(5000, self.flush_log)
 
-
     def append_log_entry(self, entry):
         """Callback for external events (like focus events) to add a log entry."""
         self.log_entries.append(entry)
@@ -223,7 +226,9 @@ class TextEditorApp:
     def flush_log(self):
         if self.log_entries:
             file_exists = os.path.exists(self.csv_filename)
-            with open(self.csv_filename, mode="a", newline="", encoding="utf-8") as csvfile:
+            with open(
+                self.csv_filename, mode="a", newline="", encoding="utf-8"
+            ) as csvfile:
                 fieldnames = ["timestamp", "key_value", "key_event"]
                 writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
                 if not file_exists:
@@ -235,51 +240,66 @@ class TextEditorApp:
             batch_payload = []
             for entry in self.log_entries:
                 if entry["key_event"] == "focus_duration":
-                    batch_payload.append({
-                        "Type": "focus",
-                        "Value": [f"{entry['duration']:.3f}"]  # Correct focus loss duration payload
-                    })
+                    batch_payload.append(
+                        {
+                            "Type": "focus",
+                            "Value": [
+                                f"{entry['duration']:.3f}"
+                            ],  # Correct focus loss duration payload
+                        }
+                    )
                 elif entry["key_event"] == "suspicious_activity":
-                    batch_payload.append({
-                        "Type": "focus",
-                        "Value": ["false", entry["timestamp"]]  # Focus lost payload
-                    })
+                    batch_payload.append(
+                        {
+                            "Type": "focus",
+                            "Value": [
+                                "false",
+                                entry["timestamp"],
+                            ],  # Focus lost payload
+                        }
+                    )
                 elif entry["key_event"] == "focus_restore":
-                    batch_payload.append({
-                        "Type": "focus",
-                        "Value": ["true", entry["timestamp"]]  # Focus regained payload
-                    })
+                    batch_payload.append(
+                        {
+                            "Type": "focus",
+                            "Value": [
+                                "true",
+                                entry["timestamp"],
+                            ],  # Focus regained payload
+                        }
+                    )
                 else:  # Handles key_press events
-                    batch_payload.append({
-                        "Type": "key_press",
-                        "Value": [
-                            entry["key_value"],
-                            entry["key_event"],
-                            entry["timestamp"],
-                        ],
-                    })
+                    batch_payload.append(
+                        {
+                            "Type": "key_press",
+                            "Value": [
+                                entry["key_value"],
+                                entry["key_event"],
+                                entry["timestamp"],
+                            ],
+                        }
+                    )
 
             if batch_payload:
-                json_payload = json.dumps({"data":batch_payload})
+                json_payload = json.dumps({"data": batch_payload})
                 print("Sending batch payload to backend:")
                 print(json_payload)
 
                 # Uncomment when backend is ready
-                try:
-                    response = req.post(
-                        "http://localhost:8080/publish",
-                        data=json_payload,
-                        headers={"Content-Type": "application/json"},
-                    )
-                    print(f"Batch sent, status code: {response.status_code}")
-                except Exception as e:
-                    print(f"Error sending batch: {e}")
+                # try:
+                #     response = req.post(
+                #         "http://localhost:8080/publish",
+                #         data=json_payload,
+                #         headers={"Content-Type": "application/json"},
+                #     )
+                #     print(f"Batch sent, status code: {response.status_code}")
+                # except Exception as e:
+                #     print(f"Error sending batch: {e}")
 
             self.log_entries = []  # Clear log entries after sending batch
 
         if self.root.winfo_exists():
             self.root.after(5000, self.flush_log)
-
 
     def new_file(self):
         for widget in self.answer_widgets:
