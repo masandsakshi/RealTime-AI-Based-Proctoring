@@ -21,7 +21,7 @@ type Config struct {
 var config = Config{
 	Endpoints: map[string]string{
 		"key_press": "http://localhost:5000/key_press",
-		"focus": "http://localhost:8082/focus",
+		"focus": "http://localhost:6000/log",
 		"full" : "http://localhost:8083/full",
 	},
 	Enabled: map[string]bool{

@@ -260,7 +260,7 @@ class TextEditorApp:
                     })
 
             if batch_payload:
-                json_payload = json.dumps(batch_payload)
+                json_payload = json.dumps({"data":batch_payload})
                 print("Sending batch payload to backend:")
                 print(json_payload)
 
