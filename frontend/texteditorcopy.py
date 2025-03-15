@@ -254,19 +254,19 @@ class TextEditorApp:
                     )
 
             if batch_payload:
-                json_payload = json.dumps(batch_payload, indent=4)
+                json_payload = json.dumps({"data" :batch_payload})
                 print("Sending batch payload to backend:")
                 print(json_payload)
 
-                # try:
-                #     response = req.post(
-                #         "http://localhost:8080/publish",
-                #         data=json_payload,
-                #         headers={"Content-Type": "application/json"},
-                #     )
-                #     print(f"Batch sent, status code: {response.status_code}")
-                # except Exception as e:
-                #     print(f"Error sending batch: {e}")
+                try:
+                    response = req.post(
+                        "http://localhost:8080/publish",
+                        data=json_payload,
+                        headers={"Content-Type": "application/json"},
+                    )
+                    print(f"Batch sent, status code: {response.status_code}")
+                except Exception as e:
+                    print(f"Error sending batch: {e}")
 
             self.log_entries = []
 
