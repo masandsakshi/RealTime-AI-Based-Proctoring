@@ -32,17 +32,26 @@ var config = Config{
 }
 
 func publishHandler(w http.ResponseWriter, r *http.Request) {
-	var event Event
-	if err := json.NewDecoder(r.Body).Decode(&event); err != nil {
+	var requestData struct {
+		Data []Event `json:"data"`
+	}
+
+	// Decode JSON request
+	if err := json.NewDecoder(r.Body).Decode(&requestData); err != nil {
 		http.Error(w, "Invalid request", http.StatusBadRequest)
 		return
 	}
-	endpoint, exists := config.Endpoints[event.Type]
-	fmt.Println(event, exists, endpoint, config.Enabled[event.Type])
-	if exists && config.Enabled[event.Type] {
-		forwardEvent(endpoint, event)
+	fmt.Println(requestData)
+	// Process each event
+	for _, event := range requestData.Data {
+		endpoint, exists := config.Endpoints[event.Type]
+		if exists && config.Enabled[event.Type] {
+			fmt.Println(event,endpoint)
+			forwardEvent(endpoint, event)
+		}
 	}
-	fmt.Fprintf(w, "Event received: %s", event.Type)
+
+	fmt.Fprintf(w, "Events received successfully")
 }
 
 func forwardEvent(endpoint string, event Event) {
