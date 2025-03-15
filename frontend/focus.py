@@ -44,15 +44,13 @@ class FocusMonitor:
     def on_focus_out(self, event):
         focused_widget = self.widget.focus_get()
 
-        # Ignore if focus is moving to an internal widget
         if focused_widget and self._is_internal_widget(focused_widget):
             return
 
-        # Only log if focus is truly lost to external window
         if not focused_widget and self._should_log_event():
             timestamp = datetime.datetime.now().timestamp()
             self.suspicious_count += 1
-            self.focus_was_lost = True  # Set flag when focus is truly lost
+            self.focus_was_lost = True
             self.lost_focus_time = timestamp
 
             entry = {
@@ -63,6 +61,7 @@ class FocusMonitor:
 
             print(f"\nWARNING: Suspicious Activity #{self.suspicious_count} detected!")
             print(f"Student switched away from exam window at {timestamp:.3f}")
+
             payload = {
                 "Type": "focus",
                 "Value": ["false", f"{timestamp:.3f}"],
@@ -75,22 +74,6 @@ class FocusMonitor:
         if self.focus_was_lost and self._should_log_event():
             timestamp = datetime.datetime.now().timestamp()
 
-            if self.lost_focus_time:
-                lost_duration = int((timestamp - self.lost_focus_time) * 1000)  # Convert to milliseconds
-
-                focus_duration_entry = {
-                    "timestamp": f"{timestamp:.3f}",
-                    "key_value": f"Focus lost duration: {lost_duration}ms",
-                    "key_event": "focus_duration",
-                    "duration": lost_duration  
-                }
-                payload = {
-                    "Type": "focus_loss",
-                "Value": [f"{lost_duration:.3f}"],
-                }
-                self.log_callback(focus_duration_entry) 
-
-
             entry = {
                 "timestamp": f"{timestamp:.3f}",
                 "key_value": "Window focus restored",
@@ -98,12 +81,31 @@ class FocusMonitor:
             }
 
             print(f"focus restored {timestamp:.3f}")
+
             payload = {
                 "Type": "focus",
                 "Value": ["true", f"{timestamp:.3f}"],
             }
             print(json.dumps(payload))
-            self.log_callback(entry)  # Store in log buffer
+
+            if self.lost_focus_time:
+                lost_duration = int((timestamp - self.lost_focus_time) * 1000)
+
+                focus_duration_entry = {
+                    "timestamp": f"{timestamp:.3f}",
+                    "key_value": f"Focus lost duration: {lost_duration}ms",
+                    "key_event": "focus_duration",
+                    "duration": lost_duration,
+                }
+
+                payload = {
+                    "Type": "focus",
+                    "Value": [f"{lost_duration:.3f}"],
+                }
+                print(json.dumps(payload))
+                self.log_callback(focus_duration_entry)
+
+            self.log_callback(entry)
 
             self.focus_was_lost = False
             self.lost_focus_time = None

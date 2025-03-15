@@ -235,29 +235,36 @@ class TextEditorApp:
             batch_payload = []
             for entry in self.log_entries:
                 if entry["key_event"] == "focus_duration":
-                    batch_payload.append(
-                        {
-                            "Type": "focus_loss",
-                            "Value": [str(entry["duration"])],  # Keep in milliseconds
-                        }
-                    )
-                else:
-                    batch_payload.append(
-                        {
-                            "Type": "key_press",
-                            "Value": [
-                                entry["key_value"],
-                                entry["key_event"],
-                                entry["timestamp"],
-                            ],
-                        }
-                    )
+                    batch_payload.append({
+                        "Type": "focus",
+                        "Value": [f"{entry['duration']:.3f}"]  # Correct focus loss duration payload
+                    })
+                elif entry["key_event"] == "suspicious_activity":
+                    batch_payload.append({
+                        "Type": "focus",
+                        "Value": ["false", entry["timestamp"]]  # Focus lost payload
+                    })
+                elif entry["key_event"] == "focus_restore":
+                    batch_payload.append({
+                        "Type": "focus",
+                        "Value": ["true", entry["timestamp"]]  # Focus regained payload
+                    })
+                else:  # Handles key_press events
+                    batch_payload.append({
+                        "Type": "key_press",
+                        "Value": [
+                            entry["key_value"],
+                            entry["key_event"],
+                            entry["timestamp"],
+                        ],
+                    })
 
             if batch_payload:
                 json_payload = json.dumps(batch_payload, indent=4)
                 print("Sending batch payload to backend:")
                 print(json_payload)
 
+                # Uncomment when backend is ready
                 # try:
                 #     response = req.post(
                 #         "http://localhost:8080/publish",
@@ -268,10 +275,11 @@ class TextEditorApp:
                 # except Exception as e:
                 #     print(f"Error sending batch: {e}")
 
-            self.log_entries = []
+            self.log_entries = []  # Clear log entries after sending batch
 
         if self.root.winfo_exists():
             self.root.after(5000, self.flush_log)
+
 
     def new_file(self):
         for widget in self.answer_widgets:

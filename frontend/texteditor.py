@@ -223,48 +223,63 @@ class TextEditorApp:
     def flush_log(self):
         if self.log_entries:
             file_exists = os.path.exists(self.csv_filename)
-            with open(
-                self.csv_filename, mode="a", newline="", encoding="utf-8"
-            ) as csvfile:
+            with open(self.csv_filename, mode="a", newline="", encoding="utf-8") as csvfile:
                 fieldnames = ["timestamp", "key_value", "key_event"]
                 writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
                 if not file_exists:
                     writer.writeheader()
                 for entry in self.log_entries:
-                    writer.writerow(entry)
+                    filtered_entry = {k: entry[k] for k in fieldnames if k in entry}
+                    writer.writerow(filtered_entry)
 
             batch_payload = []
             for entry in self.log_entries:
-                batch_payload.append(
-                    {
+                if entry["key_event"] == "focus_duration":
+                    batch_payload.append({
+                        "Type": "focus",
+                        "Value": [f"{entry['duration']:.3f}"]  # Correct focus loss duration payload
+                    })
+                elif entry["key_event"] == "suspicious_activity":
+                    batch_payload.append({
+                        "Type": "focus",
+                        "Value": ["false", entry["timestamp"]]  # Focus lost payload
+                    })
+                elif entry["key_event"] == "focus_restore":
+                    batch_payload.append({
+                        "Type": "focus",
+                        "Value": ["true", entry["timestamp"]]  # Focus regained payload
+                    })
+                else:  # Handles key_press events
+                    batch_payload.append({
                         "Type": "key_press",
                         "Value": [
                             entry["key_value"],
                             entry["key_event"],
                             entry["timestamp"],
                         ],
-                    }
-                )
+                    })
 
             if batch_payload:
-                # Print the JSON payload before sending
                 json_payload = json.dumps(batch_payload, indent=4)
                 print("Sending batch payload to backend:")
-                print(json_payload)  
+                print(json_payload)
 
+                # Uncomment when backend is ready
                 # try:
                 #     response = req.post(
-                #         'http://localhost:8080/publish',
+                #         "http://localhost:8080/publish",
                 #         data=json_payload,
-                #         headers={'Content-Type': 'application/json'}
+                #         headers={"Content-Type": "application/json"},
                 #     )
                 #     print(f"Batch sent, status code: {response.status_code}")
                 # except Exception as e:
                 #     print(f"Error sending batch: {e}")
 
-            self.log_entries = []
+            self.log_entries = []  # Clear log entries after sending batch
+
         if self.root.winfo_exists():
             self.root.after(5000, self.flush_log)
+
 
     def new_file(self):
         for widget in self.answer_widgets:
