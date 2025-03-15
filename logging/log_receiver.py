@@ -10,11 +10,13 @@ def init_log_file():
 
 def log(typ,data):
     with open('./activity.log','a') as f:
-        f.writelines([f'{typ} | {data}\n'])
+        tmp =''
+        for i in data:
+            tmp +=( i +" ")
+        f.writelines([f'{typ} {tmp}\n'])
 
 init_log_file()
-for i in range(20):
-    log('key_down',['a',120325,10])
+
 
 
 
@@ -26,9 +28,12 @@ for i in range(20):
 
 
 
-@app.route('/', methods=['POST'])
+@app.route('/log', methods=['POST'])
 def records():
-    data_point = request.json.get("event")
+    data_point = request.get_json()
+    log(data_point['Type'],data_point['Value'])
+    print('logged in file : )')
+    return 'ok', 200
 
 
 if __name__ == '__main__':
