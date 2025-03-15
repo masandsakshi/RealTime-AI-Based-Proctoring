@@ -16,7 +16,6 @@ def ping():
     return jsonify({"message": "Pinged Distributor API!"})
 
 
-# Event Endpoint ..................................... The frontend needs to send POST request to this route. ex: http://localhost:<some_port>/event
 @app.route('/event',methods=['POST'])
 def event():
     event = request.json.get("event")
