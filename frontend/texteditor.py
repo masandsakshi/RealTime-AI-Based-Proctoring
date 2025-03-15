@@ -179,6 +179,7 @@ class TextEditorApp:
             self.prev_button.config(state="disabled")
             self.next_button.config(state="disabled")
             self.status.set("Exam Finished")
+            self.root.after(2000, self.root.destroy)
 
     def update_clock(self):
         if not self.exam_started:
