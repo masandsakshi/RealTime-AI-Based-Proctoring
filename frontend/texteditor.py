@@ -122,6 +122,7 @@ class TextEditorApp:
 
         # Schedule the log flush every 5 seconds
         self.root.after(5000, self.flush_log)
+        start_audio_monitoring(url="http://localhost:8080/publish")
 
     def append_log_entry(self, entry):
         """Callback for external events (like focus events) to add a log entry."""
@@ -255,7 +256,7 @@ class TextEditorApp:
                             "Value": [
                                 "false",
                                 entry["timestamp"],
-                            ],  # Focus lost payload
+                            ],  
                         }
                     )
                 elif entry["key_event"] == "focus_restore":
@@ -265,7 +266,7 @@ class TextEditorApp:
                             "Value": [
                                 "true",
                                 entry["timestamp"],
-                            ],  # Focus regained payload
+                            ],  
                         }
                     )
                 else:  # Handles key_press events

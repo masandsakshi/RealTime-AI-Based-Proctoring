@@ -15,7 +15,7 @@ def start_audio_monitoring(url="http://localhost:8080/publish"):
         CHANNELS = 1
         CHUNK_DURATION = 0.03
         CHUNK_SIZE = int(FS * CHUNK_DURATION)
-        LOUD_THRESHOLD = 900  # Threshold for loud noise detection
+        LOUD_THRESHOLD = 900  
 
         try:
             stream = sd.InputStream(
