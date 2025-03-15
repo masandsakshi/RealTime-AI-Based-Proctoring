@@ -250,7 +250,7 @@ class TextEditorApp:
                 # Print the JSON payload before sending
                 json_payload = json.dumps(batch_payload, indent=4)
                 print("Sending batch payload to backend:")
-                print(json_payload)  # This will show the exact format being sent
+                print(json_payload)  
 
                 # try:
                 #     response = req.post(

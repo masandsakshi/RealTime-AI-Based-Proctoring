@@ -2,8 +2,6 @@
 import datetime
 import json
 
-from aiohttp import Payload
-
 
 class FocusMonitor:
     def __init__(self, widget, log_callback):
