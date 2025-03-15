@@ -8,6 +8,7 @@ import os
 from focus import FocusMonitor  # Import our focus monitor module
 import requests as req
 import json
+from audio.audio_analyser import start_audio_monitoring
 
 
 class TextEditorApp:
