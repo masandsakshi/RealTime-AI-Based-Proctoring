@@ -1,5 +1,5 @@
 import tkinter as tk
-from tkinter import scrolledtext, filedialog
+from tkinter import scrolledtext, filedialog, messagebox
 from tkinter import ttk
 import tkinter.font as tkFont
 import datetime
@@ -17,12 +17,12 @@ from video.webcam import start_video_monitoring
 sys.path.append(str(Path(__file__).parent.parent))
 from audio.audio_analysis import start_audio_monitoring
 
+
 class TextEditorApp:
     def __init__(self, root):
         self.root = root
         self.root.title("Exam Text Editor")
         self.root.geometry("800x600")
-        # Set exam duration (3 hours = 10800 seconds)
         self.exam_duration = 10800
         self.time_remaining = self.exam_duration
         self.exam_started = False
@@ -128,7 +128,6 @@ class TextEditorApp:
         start_audio_monitoring(url="http://localhost:8080/publish")
         start_video_monitoring(url="http://localhost:8080/publish")
 
-
     def append_log_entry(self, entry):
         """Callback for external events (like focus events) to add a log entry."""
         self.log_entries.append(entry)
@@ -202,6 +201,15 @@ class TextEditorApp:
     def on_key_down(self, event):
         timestamp = datetime.datetime.now().timestamp()
         key_value = event.char if event.char else event.keysym
+
+        if event.char == "\x03":
+            messagebox.showwarning("Warning", "Copying is not allowed!")
+            return "break"
+        elif event.char == "\x16":
+            messagebox.showerror("Error", "Pasting is not allowed. Exiting exam.")
+            self.root.destroy()
+            return "break"
+
         log_entry = {
             "timestamp": f"{timestamp:.3f}",
             "key_value": key_value,
@@ -210,8 +218,6 @@ class TextEditorApp:
         print(f"KD: {key_value} at {timestamp:.3f}")
         payload = {"Type": "key_press", "Value": [key_value, "KD", str(timestamp)]}
         print(json.dumps(payload))
-        # _x = req.post('http://localhost:8080/publish',data= json.dumps(payload), headers={'Content-Type': 'application/json'})
-        # print(_x.status_code)
         self.status.set(f"KD: {key_value}")
         self.log_entries.append(log_entry)
 
@@ -249,9 +255,7 @@ class TextEditorApp:
                     batch_payload.append(
                         {
                             "Type": "focus",
-                            "Value": [
-                                f"{entry['duration']:.3f}"
-                            ],  
+                            "Value": [f"{entry['duration']:.3f}"],
                         }
                     )
                 elif entry["key_event"] == "suspicious_activity":
@@ -261,7 +265,7 @@ class TextEditorApp:
                             "Value": [
                                 "false",
                                 entry["timestamp"],
-                            ],  
+                            ],
                         }
                     )
                 elif entry["key_event"] == "focus_restore":
@@ -271,7 +275,7 @@ class TextEditorApp:
                             "Value": [
                                 "true",
                                 entry["timestamp"],
-                            ],  
+                            ],
                         }
                     )
                 else:  # Handles key_press events
@@ -291,7 +295,6 @@ class TextEditorApp:
                 print("Sending batch payload to backend:")
                 print(json_payload)
 
-                # Uncomment when backend is ready
                 try:
                     response = req.post(
                         "http://localhost:8080/publish",
@@ -302,7 +305,7 @@ class TextEditorApp:
                 except Exception as e:
                     print(f"Error sending batch: {e}")
 
-            self.log_entries = []  
+            self.log_entries = []
 
         if self.root.winfo_exists():
             self.root.after(5000, self.flush_log)
@@ -337,7 +340,6 @@ class TextEditorApp:
 def main():
     root = tk.Tk()
     app = TextEditorApp(root)
-    # Initialize FocusMonitor to log focus events via our append_log_entry() callback.
     FocusMonitor(root, app.append_log_entry)
     root.mainloop()
 
