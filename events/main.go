@@ -22,12 +22,12 @@ var config = Config{
 	Endpoints: map[string]string{
 		"key_press": "http://localhost:5000/key_press",
 		"focus": "http://localhost:6000/log",
-		"full" : "http://localhost:8083/full",
+		"media" : "http://localhost:7000/media",
 	},
 	Enabled: map[string]bool{
 		"key_press":    true,
 		"focus": true,
-		"full": true,
+		"media": true,
 	},
 }
 
@@ -90,7 +90,7 @@ func main() {
 					Options(
 						huh.NewOption("Key_Press", "key_press"),
 						huh.NewOption("Window_Focus", "focus"),
-						huh.NewOption("Full_Screen", "full"),
+						huh.NewOption("Audio/Video", "media"),
 					).
 					Value(&selected),
 			),
