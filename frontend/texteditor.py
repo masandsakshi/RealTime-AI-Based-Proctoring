@@ -8,7 +8,6 @@ import os
 from focus import FocusMonitor  
 import requests as req
 import json
-from audio.audio_analysis import start_audio_monitoring
 
 
 class TextEditorApp:
@@ -16,7 +15,6 @@ class TextEditorApp:
         self.root = root
         self.root.title("Exam Text Editor")
         self.root.geometry("800x600")
-
         # Set exam duration (3 hours = 10800 seconds)
         self.exam_duration = 10800
         self.time_remaining = self.exam_duration
@@ -120,7 +118,6 @@ class TextEditorApp:
 
         # Schedule the log flush every 5 seconds
         self.root.after(5000, self.flush_log)
-        start_audio_monitoring(url="http://localhost:8080/publish")
 
 
     def append_log_entry(self, entry):
