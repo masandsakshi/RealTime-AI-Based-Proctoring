@@ -1,6 +1,6 @@
 from flask import Flask, jsonify, request
 import json
-import requests
+import requests as req
 
 app = Flask(__name__)
 
@@ -17,6 +17,11 @@ def records():
     # Use however u like :)
 
     return 'ok', 200
+
+
+def sendLog(num,ts):
+    r = req.post("http://localhost:6000/log",data=json.dumps({"Type":"key","Value":[num, ts]}))
+    return 'ok',200
 
 
 if __name__ == '__main__':
