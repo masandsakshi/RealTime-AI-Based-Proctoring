@@ -13,12 +13,6 @@ def start_audio_monitoring(
     amplitude_threshold=0.1,
     suspicious_duration_threshold=5,
 ):
-    """
-    Starts a background thread that continuously monitors audio.
-
-    - If speech is detected, it sends a payload indicating suspicious conversation.
-    - If loud noise persists for longer than the threshold, it sends a payload indicating suspicious activity.
-    """
 
     def audio_monitoring_loop():
         FS = 16000  # Sampling rate (Hz); optimal for webrtcvad
