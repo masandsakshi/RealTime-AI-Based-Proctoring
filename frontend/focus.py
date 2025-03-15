@@ -83,4 +83,4 @@ class FocusMonitor:
             }
             print(json.dumps(payload))
 
-            self.focus_was_lost = False  # Reset the flag
+            self.focus_was_lost = False  
