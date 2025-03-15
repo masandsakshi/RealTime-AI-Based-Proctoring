@@ -245,7 +245,7 @@ class TextEditorApp:
                             "Type": "focus",
                             "Value": [
                                 f"{entry['duration']:.3f}"
-                            ],  # Correct focus loss duration payload
+                            ],  
                         }
                     )
                 elif entry["key_event"] == "suspicious_activity":
