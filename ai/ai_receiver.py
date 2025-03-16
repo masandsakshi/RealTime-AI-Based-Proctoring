@@ -2,7 +2,7 @@ import numpy as np
 import requests  # ✅ Import requests for logging
 from flask import Flask, request, jsonify
 import time
-from tensorflow.keras.models import load_model
+from tensorflow.keras.models import load_model # type: ignore
 from collections import deque
 
 app = Flask(__name__)
