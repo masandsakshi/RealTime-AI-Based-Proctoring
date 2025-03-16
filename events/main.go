@@ -22,6 +22,8 @@ var config = Config{
 	Endpoints: map[string]string{
 		"key_press": "http://localhost:5000/key_press",
 		"focus": "http://localhost:6000/log",
+		"sus_aud": "http://localhost:6000/log",
+		"sus_vid": "http://localhost:6000/log",
 		"media" : "http://localhost:7000/media",
 	},
 	Enabled: map[string]bool{
