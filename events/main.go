@@ -5,12 +5,13 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+
 	"github.com/charmbracelet/huh"
 )
 
 type Event struct {
-	Type string
-	Value []string 
+	Type  string
+	Value []string
 }
 
 type Config struct {
@@ -21,17 +22,17 @@ type Config struct {
 var config = Config{
 	Endpoints: map[string]string{
 		"key_press": "http://localhost:5000/key_press",
-		"focus": "http://localhost:6000/log",
-		"sus_aud": "http://localhost:6000/log",
-		"sus_vid": "http://localhost:6000/log",
-		"media" : "http://localhost:7000/media",
+		"focus":     "http://localhost:6000/log",
+		"sus_aud":   "http://localhost:6000/log",
+		"sus_vid":   "http://localhost:6000/log",
+		"media":     "http://localhost:7000/media",
 	},
 	Enabled: map[string]bool{
-		"key_press":    true,
-		"focus": true,
-		"sus_aud": true,
-		"sus_vid": true,
-		"media": true,
+		"key_press": true,
+		"focus":     true,
+		"sus_aud":   true,
+		"sus_vid":   true,
+		"media":     true,
 	},
 }
 
@@ -50,7 +51,7 @@ func publishHandler(w http.ResponseWriter, r *http.Request) {
 	for _, event := range requestData.Data {
 		endpoint, exists := config.Endpoints[event.Type]
 		if exists && config.Enabled[event.Type] {
-			fmt.Println(event,endpoint)
+			fmt.Println(event, endpoint)
 			forwardEvent(endpoint, event)
 		}
 	}
@@ -68,8 +69,7 @@ func forwardEvent(endpoint string, event Event) {
 	resp.Body.Close()
 }
 
-
-var formRunOnce bool = false 
+var formRunOnce bool = false
 
 func main() {
 	// HTTP server
@@ -82,7 +82,14 @@ func main() {
 	selected := []string{}
 	for key, enabled := range config.Enabled {
 		if enabled {
-			selected = append(selected, key)
+			// Map internal event types to UI options
+			if key == "sus_aud" || key == "sus_vid" {
+				if !contains(selected, "media") {
+					selected = append(selected, "media")
+				}
+			} else {
+				selected = append(selected, key)
+			}
 		}
 	}
 
@@ -107,14 +114,37 @@ func main() {
 
 		formRunOnce = true
 
+		// Reset all options first
 		for key := range config.Enabled {
 			config.Enabled[key] = false
 		}
+
+		// Apply the selected options with proper mapping
 		for _, v := range selected {
 			config.Enabled[v] = true
+
+			// If "media" is selected, enable both audio and video events
+			if v == "media" {
+				config.Enabled["sus_aud"] = true
+				config.Enabled["sus_vid"] = true
+			}
 		}
+	}
+
+	fmt.Println("Current configuration:")
+	for key, enabled := range config.Enabled {
+		fmt.Printf("- %s: %v\n", key, enabled)
 	}
 
 	fmt.Scanln()
 }
 
+// Helper function to check if a slice contains a string
+func contains(slice []string, s string) bool {
+	for _, item := range slice {
+		if item == s {
+			return true
+		}
+	}
+	return false
+}

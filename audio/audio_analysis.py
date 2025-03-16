@@ -4,6 +4,7 @@ import sounddevice as sd
 import requests
 import threading
 from queue import Queue
+import json
 
 
 def start_audio_monitoring(url="http://localhost:8080/publish"):
@@ -15,7 +16,7 @@ def start_audio_monitoring(url="http://localhost:8080/publish"):
         CHANNELS = 1
         CHUNK_DURATION = 0.03
         CHUNK_SIZE = int(FS * CHUNK_DURATION)
-        LOUD_THRESHOLD = 900  
+        LOUD_THRESHOLD = 900
 
         try:
             stream = sd.InputStream(
@@ -37,15 +38,18 @@ def start_audio_monitoring(url="http://localhost:8080/publish"):
 
                         if amplitude > LOUD_THRESHOLD:
                             timestamp = time.time()
+                            # Use the standard format directly
                             event_queue.put(
                                 {
                                     "Type": "sus_aud",
                                     "Value": [
-                                        "LOUD noise detected!",
+                                        f"LOUD noise detected!",
                                         f"{timestamp:.3f}",
                                     ],
-                                    "Level": "critical",
                                 }
+                            )
+                            print(
+                                f"Detected loud noise: {amplitude:.2f} at {timestamp:.3f}"
                             )
 
                         time.sleep(0.01)
@@ -62,16 +66,23 @@ def start_audio_monitoring(url="http://localhost:8080/publish"):
                 if not event_queue.empty():
                     event = event_queue.get()
                     try:
+                        # Wrap the event in a data array as expected by main.go
+                        payload = {"data": [event]}
+                        json_payload = json.dumps(payload)
+                        print(f"Sending audio event: {json_payload}")
+
                         response = requests.post(
                             url,
-                            json={"data": [event]},
+                            data=json_payload,
                             headers={"Content-Type": "application/json"},
                             timeout=1,
                         )
-                    except requests.exceptions.RequestException:
-                        pass
+                        print(f"Audio event sent, status: {response.status_code}")
+                    except requests.exceptions.RequestException as e:
+                        print(f"Failed to send audio event: {e}")
                 time.sleep(0.1)
-            except Exception:
+            except Exception as e:
+                print(f"Error in event_sender: {e}")
                 time.sleep(0.1)
 
     # Start threads
