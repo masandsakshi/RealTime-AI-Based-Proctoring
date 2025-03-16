@@ -6,6 +6,7 @@ import datetime
 import csv
 import os
 import sys
+import time  # Add this import for sleep functionality
 from pathlib import Path
 from focus import FocusMonitor
 import requests as req
@@ -19,11 +20,20 @@ from audio.audio_analysis import start_audio_monitoring
 
 
 class TextEditorApp:
-    def __init__(self, root):
+    def __init__(self, root, exam_duration_minutes=180):
         self.root = root
         self.root.title("Exam Text Editor")
-        self.root.geometry("800x600")
-        self.exam_duration = 10800
+
+        # Make window fullscreen with security measures
+        self.root.attributes("-fullscreen", True)
+        self.root.attributes("-topmost", True)  # Keep window always on top
+        self.root.protocol("WM_DELETE_WINDOW", lambda: None)  # Disable close button
+        self.root.resizable(False, False)  # Disable resizing
+
+        # Add controlled exit method
+        self.exam_finished = False
+
+        self.exam_duration = exam_duration_minutes * 60
         self.time_remaining = self.exam_duration
         self.exam_started = False
 
@@ -67,11 +77,8 @@ class TextEditorApp:
 
         custom_font = tkFont.Font(family="Helvetica", size=12)
 
-        # Define the questions list
-        self.questions = [
-            "Question 1: What is your name?",
-            "Question 2: What is your age?",
-        ]
+        # Load questions from file or use defaults
+        self.questions = self.load_questions()
 
         self.question_frames = []
         self.answer_widgets = []
@@ -174,12 +181,21 @@ class TextEditorApp:
             self.log_question_change(self.questions[self.current_question])
         else:
             self.flush_log()
-            for widget in self.answer_widgets:
-                widget.config(state="disabled")
-            self.prev_button.config(state="disabled")
-            self.next_button.config(state="disabled")
-            self.status.set("Exam Finished")
-            self.root.after(2000, self.root.destroy)
+            # Ask for confirmation before finishing
+            if messagebox.askyesno(
+                "Finish Exam", "Are you sure you want to finish the exam?"
+            ):
+                for widget in self.answer_widgets:
+                    widget.config(state="disabled")
+                self.prev_button.config(state="disabled")
+                self.next_button.config(state="disabled")
+                self.status.set("Exam Finished")
+
+                # Show completion message
+                messagebox.showinfo(
+                    "Exam Complete", "Your exam has been submitted successfully."
+                )
+                self.root.after(1000, self.root.destroy)
 
     def update_clock(self):
         if not self.exam_started:
@@ -336,6 +352,23 @@ class TextEditorApp:
             with open(file_path, "w", encoding="utf-8") as file:
                 file.write(combined_text)
             self.status.set(f"Saved: {file_path}")
+
+    def load_questions(self):
+        """Load questions from external file or API"""
+        try:
+            questions_file = Path(__file__).parent / "questions.json"
+            if questions_file.exists():
+                with open(questions_file, "r") as f:
+                    return json.load(f)
+        except Exception as e:
+            print(f"Error loading questions: {e}")
+
+        # Default questions if file not found or error occurs
+        return [
+            "Question 1: What is your name?",
+            "Question 2: What is your age?",
+            "Question 3: Describe your educational background.",
+        ]
 
 
 def main():
