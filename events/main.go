@@ -29,6 +29,8 @@ var config = Config{
 	Enabled: map[string]bool{
 		"key_press":    true,
 		"focus": true,
+		"sus_aud": true,
+		"sus_vid": true,
 		"media": true,
 	},
 }
