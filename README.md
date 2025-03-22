@@ -37,28 +37,26 @@ c. Updates risk scores dynamically as new events occur.
 🔹 1. Install Dependencies
 Make sure Python and the required libraries are installed:
 
-bash
-Copy
-Edit
 pip install tensorflow numpy pandas scikit-learn opencv-python pyaudio
 
 🔹 2. Navigate to the Respective Directories
+
 Move into the correct project directories before running each component.
 
 # 📌 Execution Order
+
 Run the following scripts in this order:
 
-bash
-Copy
-Edit
 python ai_reciever.py     # Start AI processing
 go run main.go            # Start event logging system (Go backend)
 python log_reciever.py    # Start log monitoring system
 python texteditor.py      # Start frontend (text editor interface)
 python flagger.py         # Start logging & risk analysis
+
 🔹 Run texteditor.py last to launch the exam interface.
 
 # 📌 Risk Score & Warnings
+
 Risk Score (%)	Action
 0 - 25%	✅ Safe (No action needed)
 25 - 45%	🔸 Low Risk (Mild Warning)
@@ -66,6 +64,7 @@ Risk Score (%)	Action
 75 - 100%	❌ High Risk (Exam Termination)
 
 # 📌 Log File Format (activity.log)
+
 The system reads and processes logs in real-time. The log format includes:
 
 Event Type	Description	Example Log
