@@ -1,8 +1,8 @@
-📌 Real-Time AI Proctoring System - README
-🚀 Overview
+# 📌 Real-Time AI Proctoring System - README
+
 This is an AI-powered proctoring system that monitors keystroke behavior, screen focus, audio, and video activity to detect suspicious behavior during online exams. The system continuously logs activities, computes a risk score out of 100%, and issues warnings or termination alerts based on detected anomalies.
 
-📌 Features
+# 📌 Features
 🔹 1. Keystroke Behavior Analysis
 a. Detects irregular typing patterns using LSTM-based anomaly detection.
 b. Logs keystroke speed, hold time, and flight time for risk assessment.
@@ -33,7 +33,7 @@ a. Monitors activity.log in real-time and processes new data every 5 seconds.
 b. Ensures efficient log reading without reprocessing old data.
 c. Updates risk scores dynamically as new events occur.
 
-📌 Installation & Setup
+# 📌 Installation & Setup
 🔹 1. Install Dependencies
 Make sure Python and the required libraries are installed:
 
@@ -45,7 +45,7 @@ pip install tensorflow numpy pandas scikit-learn opencv-python pyaudio
 🔹 2. Navigate to the Respective Directories
 Move into the correct project directories before running each component.
 
-📌 Execution Order
+# 📌 Execution Order
 Run the following scripts in this order:
 
 bash
@@ -58,13 +58,14 @@ python texteditor.py      # Start frontend (text editor interface)
 python flagger.py         # Start logging & risk analysis
 🔹 Run texteditor.py last to launch the exam interface.
 
-📌 Risk Score & Warnings
+# 📌 Risk Score & Warnings
 Risk Score (%)	Action
 0 - 25%	✅ Safe (No action needed)
 25 - 45%	🔸 Low Risk (Mild Warning)
 45 - 75%	⚠️ Medium Risk (Strong Warning)
 75 - 100%	❌ High Risk (Exam Termination)
-📌 Log File Format (activity.log)
+
+# 📌 Log File Format (activity.log)
 The system reads and processes logs in real-time. The log format includes:
 
 Event Type	Description	Example Log
