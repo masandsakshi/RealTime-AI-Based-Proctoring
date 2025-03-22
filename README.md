@@ -48,9 +48,13 @@ Move into the correct project directories before running each component.
 Run the following scripts in this order:
 
 python ai_reciever.py     # Start AI processing
+
 go run main.go            # Start event logging system (Go backend)
+
 python log_reciever.py    # Start log monitoring system
+
 python texteditor.py      # Start frontend (text editor interface)
+
 python flagger.py         # Start logging & risk analysis
 
 🔹 Run texteditor.py last to launch the exam interface.
@@ -59,17 +63,27 @@ python flagger.py         # Start logging & risk analysis
 
 Risk Score (%)	Action
 0 - 25%	✅ Safe (No action needed)
+
 25 - 45%	🔸 Low Risk (Mild Warning)
+
 45 - 75%	⚠️ Medium Risk (Strong Warning)
+
 75 - 100%	❌ High Risk (Exam Termination)
 
 # 📌 Log File Format (activity.log)
 
 The system reads and processes logs in real-time. The log format includes:
 
-Event Type	Description	Example Log
-ai_check	Keystroke anomaly detected	ai_check Anomaly Detected Score: 12.56
+Event       Type	                      Description              	
+
+# Example Log:
+
+ai_check  Keystroke anomaly detected	ai_check Anomaly Detected Score: 12.56
+
 focus	Screen out of focus	focus 20.35 (User out of focus for 20.35 sec)
+
 focus true	User regained focus	focus true 1742105169.737
+
 sus_aud	Loud noise detected	sus_aud LOUD noise detected! 1742105173.246
+
 sus_vid	User left camera view	sus_vid Where you go???? 1742105180.059
